@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>System Faktur | The North Grip Lumber</title>
+    <style>
+        :root {
+            --forest-dark: #1b2e1b;
+            --forest-green: #2d5a27;
+            --wood-brown: #5d4037;
+            --paper-beige: #fdfaf6;
+            --accent: #d4a373;
+        }
+
+        body {
+            font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+            background-color: #2c3e50;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* PANEL STEROWANIA */
+        .no-print {
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 900px;
+            border-left: 8px solid var(--forest-green);
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        input, select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: 0.3s;
+        }
+
+        .btn-add { background: var(--forest-green); color: white; }
+        .btn-print { background: var(--wood-brown); color: white; width: 100%; margin-top: 10px; }
+        .btn:hover { opacity: 0.8; transform: translateY(-2px); }
+
+        /* ARKUSZ FAKTURY */
+        .invoice-paper {
+            background: var(--paper-beige);
+            width: 210mm;
+            min-height: 297mm;
+            padding: 25mm;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            box-sizing: border-box;
+            position: relative;
+            border: 1px solid #dcdcdc;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 4px solid var(--forest-dark);
+            padding-bottom: 20px;
+            margin-bottom: 40px;
+        }
+
+        .logo h1 {
+            color: var(--forest-dark);
+            margin: 0;
+            font-size: 32px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .logo p { margin: 5px 0; color: var(--forest-green); font-weight: bold; }
+
+        .invoice-info { text-align: right; }
+        .invoice-info h2 { margin: 0; color: var(--wood-brown); }
+
+        .client-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            margin-bottom: 40px;
+        }
+
+        .info-box h4 {
+            border-bottom: 2px solid var(--accent);
+            margin-bottom: 10px;
+            color: var(--forest-dark);
+            padding-bottom: 5px;
+        }
+
+        /* TABELA POZYCJI */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        th {
+            background: var(--forest-dark);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            text-transform: uppercase;
+            font-size: 13px;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .total-box {
+            float: right;
+            width: 300px;
+            background: #f1f1f1;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* PODPIS (Twoja Parafka) */
+        .signature-section {
+            margin-top: 120px;
+            clear: both;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .signature-wrap {
+            text-align: center;
+            width: 280px;
+        }
+
+        .vance-signature {
+            font-family: 'Brush Script MT', cursive;
+            font-size: 42px;
+            color: #0b1a30;
+            margin-bottom: -15px;
+            transform: rotate(-3deg);
+            /* Styl Twojej pierwszej parafki */
+            border-bottom: 2px solid #000;
+            display: inline-block;
+            padding: 0 20px;
+        }
+
+        .sig-text {
+            font-size: 11px;
+            text-transform: uppercase;
+            margin-top: 10px;
+            color: #555;
+        }
+
+        @media print {
+            .no-print { display: none; }
+            body { background: white; padding: 0; }
+            .invoice-paper { box-shadow: none; border: none; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="no-print">
+    <h3 style="margin-top:0; color: var(--forest-green);">🌲 Panel Zarządzania The North Grip Lumber</h3>
+    
+    <div class="controls-grid">
+        <input type="text" id="client_name" placeholder="Dane Klienta">
+        <input type="text" id="inv_number" placeholder="Numer faktury (np. TNGL/2026/01)">
+        <input type="date" id="inv_date">
+    </div>
+
+    <hr>
+    
+    <div class="controls-grid" style="grid-template-columns: 2fr 1fr 1fr 1fr auto;">
+        <input type="text" id="item_name" placeholder="Nazwa towaru/usługi">
+        <input type="text" id="item_unit" placeholder="Jedn. (np. m3, szt.)">
+        <input type="number" id="item_qty" placeholder="Ilość">
+        <input type="number" id="item_price" placeholder="Cena jedn. $">
+        <button class="btn btn-add" onclick="addItem()">+ Dodaj</button>
+    </div>
+
+    <button class="btn btn-print" onclick="window.print()">Wystaw Fakturę (PDF)</button>
+</div>
+
+<div class="invoice-paper">
+    <div class="header">
+        <div class="logo">
+            <h1>The North Grip Lumber</h1>
+            <p>Premium Wood & Forestry Services</p>
+        </div>
+        <div class="invoice-info">
+            <h2>FAKTURA</h2>
+            <p id="out_inv_num">Numer: [WPISZ NR]</p>
+            <p id="out_inv_date">Data: [WYBIERZ DATĘ]</p>
+        </div>
+    </div>
+
+    <div class="client-info">
+        <div class="info-box">
+            <h4>SPRZEDAWCA</h4>
+            <strong>Dexter Vance</strong><br>
+            The North Grip Lumber<br>
+            Paleto Bay, Great Ocean Hwy<br>
+            San Andreas
+        </div>
+        <div class="info-box">
+            <h4>NABYWCA</h4>
+            <div id="out_client">_________________________<br>_________________________</div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Lp.</th>
+                <th>Nazwa towaru / usługi</th>
+                <th>Jedn.</th>
+                <th>Ilość</th>
+                <th>Cena jedn.</th>
+                <th style="text-align: right;">Wartość</th>
+            </tr>
+        </thead>
+        <tbody id="invoice_items">
+            </tbody>
+    </table>
+
+    <div class="total-box">
+        <div class="total-row">
+            <span>RAZEM:</span>
+            <span id="grand_total">0.00 $</span>
+        </div>
+    </div>
+
+    <div class="signature-section">
+        <div class="signature-wrap">
+            <div class="vance-signature">D. Vance</div>
+            <div class="sig-text">Podpis wystawcy: Dexter Vance</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let items = [];
+
+    // Ustawienie domyślnej daty na dziś
+    document.getElementById('inv_date').valueAsDate = new Date();
+    updateHeader();
+
+    // Słuchacze nagłówka
+    document.getElementById('client_name').addEventListener('input', updateHeader);
+    document.getElementById('inv_number').addEventListener('input', updateHeader);
+    document.getElementById('inv_date').addEventListener('input', updateHeader);
+
+    function updateHeader() {
+        document.getElementById('out_client').innerText = document.getElementById('client_name').value || "_________________________";
+        document.getElementById('out_inv_num').innerText = "Numer: " + (document.getElementById('inv_number').value || "[WPISZ NR]");
+        document.getElementById('out_inv_date').innerText = "Data: " + document.getElementById('inv_date').value;
+    }
+
+    function addItem() {
+        const name = document.getElementById('item_name').value;
+        const unit = document.getElementById('item_unit').value;
+        const qty = parseFloat(document.getElementById('item_qty').value);
+        const price = parseFloat(document.getElementById('item_price').value);
+
+        if(!name || !qty || !price) {
+            alert("Wypełnij nazwę, ilość i cenę!");
+            return;
+        }
+
+        const total = qty * price;
+        items.push({ name, unit, qty, price, total });
+        
+        // Czyść pola
+        document.getElementById('item_name').value = '';
+        document.getElementById('item_unit').value = '';
+        document.getElementById('item_qty').value = '';
+        document.getElementById('item_price').value = '';
+
+        renderTable();
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('invoice_items');
+        tbody.innerHTML = '';
+        let grandTotal = 0;
+
+        items.forEach((item, index) => {
+            grandTotal += item.total;
+            const row = `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${item.name}</td>
+                    <td>${item.unit || '-'}</td>
+                    <td>${item.qty}</td>
+                    <td>${item.price.toFixed(2)} $</td>
+                    <td style="text-align: right; font-weight: bold;">${item.total.toFixed(2)} $</td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+
+        document.getElementById('grand_total').innerText = grandTotal.toFixed(2) + " $";
+    }
+</script>
+
+</body>
+</html>
